@@ -10,7 +10,7 @@ Clone the repository or download and extract it using GitHub's **Code → Downlo
 
 ```sh
 cd IFTE0007_SP500_20261113
-python3 model/forecast.py --origin 2026-11-12 --target 2026-11-20 --output results/reproduction.json
+python3 model/forecast.py --origin 2026-11-12 --target 2026-11-20 --output results/rerun.json
 ```
 
 The output should show a forecast of **7603.30**. Compare the input hashes and forecast with the saved record. The rerun reports its own execution time.
@@ -28,3 +28,15 @@ The baseline is the 12 November close of **7,592.40**. DGS10 rose from **4.95%**
 - [Forecast record, sources and input hashes](IFTE0007_SP500_20261113/final_forecast_record.json)
 - [Agent instructions and calculation transcript](IFTE0007_SP500_20261113/agent)
 - [Saved calculation output](IFTE0007_SP500_20261113/results/reproduction.json)
+
+## Reproduce the historical comparison
+
+From the coursework folder, run:
+
+```sh
+python3 model/forecast.py --validate
+```
+
+This writes `results/reproduced_validation.json` with 753 matched forecasts and the three-period MAPE comparison. The intercept-only benchmark uses the same training labels and shrinkage as V3. The forecast rerun writes to `results/rerun.json`. The archived calculation is in `results/reproduction.json`.
+
+[Read the forecast report](report/SP500%20Forecast%20Report.pdf).

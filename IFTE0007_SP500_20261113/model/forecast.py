@@ -36,14 +36,55 @@ def calculate(prices,rates,origin,horizon=6,window=252,shrink=.5,alpha=20):
     assert dates[ids[-1]+horizon]<origin
     return {'market':'S&P 500 price index','unit':'index points','origin':str(origin),'horizon_sessions':horizon,'baseline':base,'forecast':round(forecast,2),'forecast_full_precision':forecast,'factor_yield_change_percentage_points':xs[i],'yield_latest':str(timing[i][0]),'yield_lookback':str(timing[i][1]),'intercept':intercept,'standardized_slope':slope,'training_mean':mean,'training_sd':sd,'raw_factor_slope':raw_slope,'raw_factor_intercept':raw_intercept,'expected_log_return_before_shrink':expected,'raw_forecast':raw,'window':window,'alpha':alpha,'shrink':shrink,'last_training_target':str(dates[ids[-1]+horizon]),'n_train':n}
 
+def validate(prices, rates):
+    pairs = json.loads((ROOT / 'model/validation_origins.json').read_text())
+    sessions = sorted(prices)
+    session_indices = {date: index for index, date in enumerate(sessions)}
+    rows = []
+    for pair in pairs:
+        origin = dt.date.fromisoformat(pair['origin'])
+        target = dt.date.fromisoformat(pair['target'])
+        if session_indices[target] - session_indices[origin] != 6:
+            raise ValueError(f'Expected six trading sessions for {pair}')
+        fit = calculate(prices, rates, origin)
+        baseline = prices[origin]
+        actual = prices[target]
+        predictions = {
+            'v3': fit['forecast'],
+            'unchanged': baseline,
+            # With centred predictors, the fitted intercept is the mean log return
+            # of the same eligible training labels.
+            'intercept_only': round(baseline * (1 + fit['shrink'] * math.expm1(fit['intercept'])), 2),
+        }
+        errors = {name: 100 * abs(value - actual) / actual for name, value in predictions.items()}
+        rows.append({**pair, 'actual': actual, 'predictions': predictions, 'ape': errors})
+
+    periods = {}
+    for name, start in (
+        ('three_years', '2023-11-06'),
+        ('one_year', '2025-11-06'),
+        ('six_months', '2026-05-06'),
+    ):
+        selected = [row for row in rows if row['target'] >= start]
+        periods[name] = {
+            'n': len(selected),
+            'mape_percent': {
+                method: st.mean(row['ape'][method] for row in selected)
+                for method in predictions
+            },
+        }
+    return {'periods': periods, 'rows': rows}
+
+
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--origin');parser.add_argument('--target');parser.add_argument('--validate',action='store_true');parser.add_argument('--output',default='results/demo_forecast.json');args=parser.parse_args();p,y=load();out=ROOT/args.output
+    parser=argparse.ArgumentParser();parser.add_argument('--origin');parser.add_argument('--target');parser.add_argument('--validate',action='store_true');parser.add_argument('--output',default=None);args=parser.parse_args();p,y=load();out=ROOT/(args.output or 'results/demo_forecast.json')
     if args.validate:
-        origins=json.loads((ROOT/'model/validation_origins.json').read_text());rows=[]
-        for pair in origins:
-            origin=dt.date.fromisoformat(pair['origin']);target=dt.date.fromisoformat(pair['target']);r=calculate(p,y,origin);actual=p[target]
-            r.update(target=str(target),actual=actual,APE_percent=100*abs(r['forecast_full_precision']-actual)/actual,unchanged_APE_percent=100*abs(p[origin]-actual)/actual);rows.append(r)
-        later=[r for r in rows if r['origin']>='2023-01-01'];summary={'n':len(later),'MAPE_percent':st.mean(r['APE_percent'] for r in later),'unchanged_MAPE_percent':st.mean(r['unchanged_APE_percent'] for r in later),'max_APE_percent':max(r['APE_percent'] for r in later),'rows':rows,'python_version':platform.python_version()};out=ROOT/'results/reproduced_validation.json';out.write_text(json.dumps(summary,indent=2));print(json.dumps({k:v for k,v in summary.items() if k!='rows'},indent=2));return
+        out = ROOT / (args.output or 'results/reproduced_validation.json')
+        summary = validate(p, y)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(summary, indent=2) + '\n')
+        print(json.dumps(summary['periods'], indent=2))
+        return
     origin=dt.date.fromisoformat(args.origin) if args.origin else max(p);horizon=6
     if args.target:
         target=dt.date.fromisoformat(args.target)
