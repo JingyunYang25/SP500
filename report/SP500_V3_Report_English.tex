@@ -1,0 +1,157 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=25mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,amsmath,booktabs,tabularx,microtype}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\newcommand{\pending}[1]{\textit{Pending: #1}}
+% Fill these fields from the same approved evidence record before submission.
+\newcommand{\forecastvalue}{7,603.30}
+\newcommand{\authorid}{\pending{student identifier}}
+\newcommand{\freezeinputs}{12 November cash close of 7,592.40. DGS10 was 4.98\% on 10 November and 4.95\% on 3 November. The files were assembled and run at 15:17:59 UTC on 13 November, after the 12:00 UTC cutoff}
+\newcommand{\freezecalc}{The factor was +0.03 percentage points. The training mean was 0.01876984 and the standard deviation was 0.08599358, giving $z_t=0.130593$. The intercept was 0.002445894 and the slope was 0.003223016. The estimated log return was 0.002866798, giving a raw level of 7,614.197104 and a reconstructed forecast of 7,603.30}
+\begin{document}
+\begin{center}
+{\Large IFTE0007 Coursework}\\[5pt]
+{\LARGE Forecasting the S\&P 500 Closing Level}\\[6pt]
+\authorid
+\end{center}
+
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+Reconstructed point forecast & \textbf{\forecastvalue}\\
+Market and unit & S\&P 500 price index, index points\\
+Target & 20 November 2026 at 16:00 New York (21:00 London and UTC)\\
+Information cutoff & 13 November 2026 at 12:00 London (12:00 UTC)\\
+Scoring reference & Official 20 November closing price-index level published by S\&P Dow Jones Indices \cite{brief,spdj}\\
+\bottomrule
+\end{tabularx}
+
+\section{Executive summary}
+This report forecasts the S\&P 500 six US equity sessions ahead using a single-factor ridge regression. The predictor is the change in the US ten-year Treasury yield over approximately one trading week. The model estimates a six-session log return and retains half of the implied change from the baseline close. In 753 daily rolling forecasts over the three years ending 5 November 2026, the model averaged 42.15 out of 50 under the coursework scoring rule, compared with 41.97 for the unchanged-price benchmark. V3 had smaller errors on 60.3\% of those dates, yet the average gain was only 0.19 marks before rounding the two means. Over the latest six months the gain fell to about 0.01 marks.
+
+\section{Market, data and information boundary}
+I use FRED's daily SP500 series, sourced from S\&P Dow Jones Indices, and DGS10, the Federal Reserve Board's daily ten-year constant-maturity Treasury yield quoted in annual percentage terms \cite{sp500,dgs10}. The index is measured at the US cash-market close and excludes dividends. The equity observation time and the time at which a source makes the observation available are recorded separately. For the Treasury series, the evidence identifies the H.15 release and the observed update time of the downloaded snapshot. Historical observation-level release times and real-time vintages were unavailable, so the backtest approximates the information available at each origin.
+
+The reconstruction uses the 12 November cash close reported by AP \cite{apnov12}. The six subsequent equity sessions are 13, 16, 17, 18, 19 and 20 November. Input hashes and source links are recorded in the evidence. The input observations predate the cutoff. The recorded run establishes a post-cutoff reconstruction. The rolling evaluation uses saved FRED inputs with late-October and early-November closes supplemented from dated FRED and AP closing records \cite{sp500,apnov2,apnov4,apnov5}.
+
+Three dates govern an observation's eligibility. The first is the date assigned to the index close or yield by the source. The second is the time the observation was published or could first be verified. The third is the time the copy used in the calculation was retrieved. A date label by itself establishes only the first of these. For example, a yield observation labelled with the baseline date might be accessible when this report is reproduced, even though its availability at the historical forecasting origin is uncertain. The strict prior-date rule gives the historical experiment a consistent convention and may discard some information that a live forecaster could have used. The formal run additionally requires evidence that each source snapshot was available by the coursework cutoff.
+
+Using a completed close also makes the evaluation comparable across dates. A quote observed during the trading day carries a different information set from the official close. Substituting it would change the baseline and could change the number of market sessions to the target. I count sessions on the equity calendar, which can differ from the Treasury observation calendar around holidays. The ten-year maturity describes the instrument used for the predictor. The forecast horizon is six equity sessions, and the factor's lookback is five yield observation intervals.
+
+\textbf{Frozen inputs.} \freezeinputs.
+
+\section{Factor and economic mechanism}
+Let $d$ be the latest valid DGS10 observation strictly before the baseline session $t$, and $d_{-5}$ the fifth earlier valid yield observation. The predictor is
+\[
+x_t=Y_d-Y_{d_{-5}},
+\]
+in percentage points. The series is daily. Missing observations are skipped and the latest yield must be within seven calendar days of $t$. Five valid intervals capture a recent shift in rates while reducing reliance on a single day's move. I assess this choice against three and ten intervals below.
+
+Higher Treasury yields can increase the discount rate applied to future corporate cash flows and raise financing costs, creating downward pressure on equity valuations. The relationship can reverse when rising yields reflect stronger growth and earnings expectations. In a flight to safety, yields and equities can both decline. The regression estimates the sign at each origin. A positive coefficient, as observed in the October demonstration fit, is consistent with several channels and does not identify a causal effect.
+
+The ten-year maturity is economically relevant because equities represent claims on cash flows extending beyond the next few days. A change in the long-term yield can signal a revision to the discount rate applied to those cash flows. Even so, the nominal yield reflects several influences, including expected inflation and compensation for holding longer-duration debt. Meanwhile, equity prices depend on expected earnings and on the compensation investors demand for equity risk. The same yield change can therefore accompany different equity outcomes. This motivates a small empirical adjustment to the observed index level and explains why the coefficient is allowed to vary with the training sample.
+
+\section{Forecast calculation}
+For origin $t$, the model retains the latest 252 daily labels $y_j=\log(S_{j+6}/S_j)$ whose target sessions $j+6$ strictly precede $t$. This is approximately one trading year of training observations. The earlier comparison tested 252, 504 and 756 eligible labels on common weekly origins. The rate-only specification with 252 labels and 50\% shrinkage was selected using MAPE for targets realised by the end of 2022. A rolling year provides observations to estimate the slope while placing the fit on more recent market conditions. I standardise the factor using the mean $\bar{x}$ and sample standard deviation $s_x$ computed on these training observations and fit
+\[
+ z_j=(x_j-\bar{x})/s_x,\qquad
+ (\hat a,\hat b)=\arg\min_{a,b}\left\{\sum_j(y_j-a-bz_j)^2+20b^2\right\}.
+\]
+The penalty applies to the slope. I estimate the log return $\hat r=\hat a+\hat b z_t$, calculate $G=S_t\exp(\hat r)$, and submit $F=S_t+0.50(G-S_t)$ rounded to two decimals. Ridge regularisation limits sensitivity to the fitted slope. Shrinkage limits the level adjustment where the short-horizon signal is weak. The model applies no discretionary adjustment. In the October demonstration, changing $\alpha$ from 5 to 20 to 80 at fixed shrinkage gave 7,762.77, 7,763.24 and 7,764.68 points. This checks local sensitivity of a single forecast.
+
+The maturity condition matters because a training example starting before the forecast origin can still end after it. Including that example would allow a realised price from the future to influence the coefficients. Standardising after the training sample is selected also prevents later observations from influencing the scale of the predictor. Keeping 252 eligible labels makes the estimation rule reproducible across origins, although overlapping six-session returns reduce the amount of independent information within that window.
+
+The intercept captures the average fitted log return at the training mean of the factor. The slope expresses the change in fitted log return for a one-standard-deviation increase in the yield factor. Shrinkage takes place in index points after exponentiation, so the final return implied by the submitted level can differ from half of the raw fitted log return. With a positive raw adjustment, the final point lies halfway between the baseline and the raw forecast. A negative adjustment is treated symmetrically in index points.
+
+\textbf{Frozen calculation.} \freezecalc.
+\begin{align*}
+x_t &= Y_d-Y_{d_{-5}}, &
+z_t &= (x_t-\bar{x})/s_x,\\
+\hat r &= \hat a+\hat b z_t, &
+F &= S_t+0.50\bigl[S_t e^{\hat r}-S_t\bigr].
+\end{align*}
+For a worked historical example, the 16 October 2026 baseline was 7,659.44. The yields on 15 and 7 October were 5.10\% and 5.28\%, giving a factor of $-0.18$ percentage points. The fitted raw level was 7,660.013659, so the final level was $7{,}659.44+0.50(7{,}660.013659-7{,}659.44)=7{,}659.73$ to two decimals. This historical reconstruction targeted 26 October.
+
+\section{Chronological validation and sensitivity}
+For each target, I refit using the close six equity sessions earlier and only matured labels. The benchmark forecasts the origin close. With actual close $A$, I calculate $E=100|F-A|/A$ and score each forecast as $\max(0,50-5E)$, rounded to two decimals before averaging \cite{brief}.
+
+\begin{table}[htbp]
+\centering
+\caption{Daily rolling evaluation ending 5 November 2026. Periods overlap.}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Period & Forecasts & \multicolumn{2}{c}{Mean score / 50} & \multicolumn{2}{c}{MAPE (\%)}\\
+& & V3 & Benchmark & V3 & Benchmark\\
+\midrule
+Three years & 753 & 42.15 & 41.97 & 1.5767 & 1.6133\\
+One year & 251 & 42.77 & 42.69 & 1.4459 & 1.4615\\
+Six months & 128 & 43.14 & 43.13 & 1.3720 & 1.3749\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The three-year targets start on 6 November 2023. V3 had a smaller absolute percentage error on 454 of 753 dates (60.3\%), compared with 133 of 251 dates (53.0\%) in the latest year. Its largest three-year error was 12.75\% on 8 April 2025, which scored zero. Adjacent forecasts share much of their horizon and training sample. These historical dates have been inspected during development, which limits their value as independent evidence of improvement.
+
+\begin{table}[htbp]
+\centering
+\caption{Sensitivity of mean coursework scores. Earlier period ends 5 November 2025.}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Yield intervals and fraction of raw price change retained & Earlier (502) & Later (251)\\
+\midrule
+3 intervals, 50\% & 41.85 & 42.76\\
+5 intervals, 50\% (V3) & 41.84 & 42.77\\
+10 intervals, 50\% & 41.80 & 42.70\\
+5 intervals, 25\% & 41.74 & 42.74\\
+5 intervals, 75\% & 41.91 & 42.76\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+I varied one setting at a time while keeping the horizon, training length and ridge penalty fixed. Three intervals slightly led the window comparison in the earlier period. Its advantage did not persist in the later period. The near-tie supports retaining the existing week-long factor and 50\% shrinkage for simplicity. The scores provide little evidence that either setting is optimal.
+
+The size of an improvement matters alongside how often it occurs. A win is recorded whenever V3 has a smaller absolute percentage error for the same target, including a difference of only a few hundredths of a point. The coursework score also caps the deduction once the absolute percentage error reaches 10\%. Two forecasts can therefore have different errors and still receive the same score. Averaging the capped scores directly preserves this feature of the grading rule. The one-year results illustrate why both metrics matter. V3 won slightly more than half of the comparisons, but the average improvement was only 0.08 marks.
+
+The three evaluation periods answer different questions. The broad sample exposes the method to a wider range of outcomes. The one-year and six-month summaries show how the comparison changes as older targets drop out. Because these periods are nested, similar results across them provide limited additional evidence. In addition, adjacent origins may be affected by the same market event. A cluster of large errors can therefore reflect one episode extending across several overlapping forecast windows. The reported mean describes this historical exercise, while the worst cases illustrate the range of outcomes relevant to a single scored submission.
+
+\section{Adverse scenario and counterargument}
+A concentrated technology sell-off can sharply lower the index over six sessions even when the rate factor calls for little change. In the historical 5 November 2026 case, V3 forecast 7,743.28 from a 28 October baseline of 7,743.98. The realised close was 7,353.73 after a 4.36\% drop on the target day \cite{apnov5}. V3's error was 5.2973\%, yielding 23.51 out of 50. A hypothetical repeat of that case's roughly 5\% six-session decline would therefore materially reduce accuracy if the model again forecast a level near its baseline.
+
+The strongest counterargument is that recent rate changes add little to a cash-index close at this horizon. Growth news, earnings, changing risk premiums and liquidity can dominate the yield channel. The recent six-month benchmark result supports that objection. Trials with a VIX change or a recent equity-return adjustment failed to establish a consistent improvement. A modest historical advantage leaves the submitted point forecast exposed to shocks after the cutoff.
+
+The 5 November case also puts the sensitivity results in perspective. Relative to the 28 October baseline, the forecast moved down just 0.70 points. Increasing the retained fraction from 50\% to 75\% would have lowered the forecast by about 0.36 additional points. That adjustment is small compared with the 389.55-point gap between the forecast and the actual close. This distinguishes sensitivity to a modelling assumption from sensitivity to market outcomes. A forecast can be stable across plausible settings and still incur a large error when the underlying index moves sharply.
+
+\section{Agent workflow and reproducibility}
+\begin{figure}[htbp]
+\centering
+\begin{tabularx}{0.95\linewidth}{@{}>{\bfseries}lX@{}}
+Goal $\downarrow$ & Forecast the official S\&P 500 close with a six-session model.\\
+Data $\downarrow$ & Codex inspects dated SP500 and DGS10 snapshots. See \texttt{final\_forecast\_record.json}.\\
+Tools $\downarrow$ & \texttt{model/forecast.py} fits the model and compares forecasts with unchanged price.\\
+Agent decision $\downarrow$ & Retain the single rate factor after comparing specifications and sensitivity.\\
+Checks $\downarrow$ & Check label maturity and equation equivalence. See \texttt{agent/calculation\_run.txt}.\\
+Human responsibility & The author is responsible for checking the sources, reproducing the result and reviewing the cover value.\\
+\end{tabularx}
+\caption{Agent workflow from research goal to author verification.}
+\end{figure}
+
+Codex inspected the brief and source definitions, invoked Python and reviewed results against the benchmark. A data endpoint returned a ZIP rather than the expected CSV, so the agent inspected its format and corrected the import. The agent also revised its economic interpretation after observing a positive rate slope. The script also converts the standardised fit back to the raw factor scale using $b_{\mathrm{raw}}=\hat b/s_x$ and $a_{\mathrm{raw}}=\hat a-b_{\mathrm{raw}}\bar{x}$. It asserts that the forecast computed with those coefficients agrees with the standardised calculation within $10^{-8}$ index points. The saved output in \texttt{agent/calculation\_run.txt} supports reproduction. The submitted evidence should contain those inputs, calculation files, agent instructions, a short transcript, reproduction steps, software versions and the forecast record matching the cover.
+
+The final verification ties the report to a specific run. The baseline and both yield observations in the report can be checked against their saved data rows. The recorded training mean, standard deviation and fitted coefficients allow the forecast to be recalculated from the factor without repeating estimation. A full rerun then checks the training sample and model output together. The two-decimal number on the first page should agree with the final forecast record and the presentation. This process leaves a record of which data and coefficients produced the submitted point estimate, even if the source pages update later.
+
+\section*{AI-use declaration}
+I used Codex to inspect the brief and source material, develop and run the Python model, compare benchmarks, test sensitivity and draft this report. Significant instructions specified the S\&P 500, a six-session horizon, chronological backtesting and a cutoff-bound forecast. Checks covered source formats, observation dates, matured training labels and numerical agreement between equivalent calculations. Corrections included the data download format and interpretation of the fitted rate slope. The exact underlying model identifier for the original research sessions was not recorded. I take responsibility for verifying the sources, results and submitted forecast.
+
+\begin{thebibliography}{9}
+\bibitem{brief} IFTE0007 module team (2026). \emph{Group Coursework: AI Agent Market Forecasting, 2026/27}. Supplied coursework brief.
+\bibitem{spdj} S\&P Dow Jones Indices (2026). \emph{S\&P 500}. \url{https://www.spglobal.com/spdji/en/indices/equity/sp-500/}
+\bibitem{sp500} S\&P Dow Jones Indices (2026). \emph{S\&P 500 [SP500]}. Federal Reserve Bank of St.\ Louis. \url{https://fred.stlouisfed.org/series/SP500}
+\bibitem{dgs10} Board of Governors of the Federal Reserve System (2026). \emph{Market Yield on U.S. Treasury Securities at 10-Year Constant Maturity [DGS10]}. FRED. \url{https://fred.stlouisfed.org/series/DGS10}
+\bibitem{apnov2} Associated Press (2026). \emph{How major US stock indexes fared Monday 11/2/2026}. \url{https://apnews.com/article/475bb37b4d95dd99e26c94e708c99f8f}
+\bibitem{apnov4} Associated Press (2026). \emph{How major US stock indexes fared Wednesday 11/4/2026}. \url{https://apnews.com/article/c0be7ca45b5875abe758e0570cb9a265}
+\bibitem{apnov5} Associated Press (2026). \emph{How major US stock indexes fared Thursday 11/5/2026}. \url{https://apnews.com/article/afe254c608c3d1fe2ea792812ba9765a}
+\bibitem{apnov12} Associated Press (2026). \emph{How major US stock indexes fared Thursday 11/12/2026}. \url{https://apnews.com/article/3f3668a937a11535103e3a5c8d82c9fc}
+\end{thebibliography}
+\end{document}

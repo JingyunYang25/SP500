@@ -1,0 +1,4 @@
+# Agent research instructions
+
+This is a documented restatement of the research objective, not a verbatim initial prompt.
+Develop and execute a transparent six-session S&P 500 price-index model for IFTE0007. Use at most two economic factors, compare against unchanged price using chronological retraining, and expose factor calculations, coefficients and sensitivity. Obtain dated original sources, use a calculation tool, verify the calculation, and record corrections. Never invent observations or future data. The assignment cutoff is 2026-11-13 12:00 UTC and target is 2026-11-20 21:00 UTC. Earlier research runs must remain labelled provisional. Permitted tools: official-source web lookup, public historical data retrieval, Python standard-library calculations and local file creation. No trading or order execution. Human group members approve the binding forecast and take responsibility for references and calculations.
