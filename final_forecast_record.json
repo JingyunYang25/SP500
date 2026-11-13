@@ -1,0 +1,43 @@
+{
+  "market": "S&P 500 price index",
+  "unit": "index points",
+  "origin": "2026-11-12",
+  "horizon_sessions": 6,
+  "baseline": 7592.4,
+  "forecast": 7603.3,
+  "forecast_full_precision": 7603.298552058313,
+  "factor_yield_change_percentage_points": 0.03000000000000025,
+  "yield_latest": "2026-11-10",
+  "yield_lookback": "2026-11-03",
+  "intercept": 0.0024458944295661493,
+  "standardized_slope": 0.003223015878748145,
+  "training_mean": 0.018769841269841277,
+  "training_sd": 0.0859935754756265,
+  "raw_factor_slope": 0.0374797286997522,
+  "raw_factor_intercept": 0.001742405871035086,
+  "expected_log_return_before_shrink": 0.002866797732027661,
+  "raw_forecast": 7614.197104116626,
+  "window": 252,
+  "alpha": 20,
+  "shrink": 0.5,
+  "last_training_target": "2026-11-11",
+  "n_train": 252,
+  "run_utc": "2026-11-13T15:17:59.899976+00:00",
+  "python_version": "3.9.6",
+  "status": "POST_CUTOFF_RECONSTRUCTION_NOT_A_PRE_CUTOFF_FREEZE",
+  "target": "2026-11-20",
+  "input_sha256": {
+    "daily,_close.csv": "3fcc8ed1e6b95c8324f3a72911de12c706da5715437435ef31249e0cbdb3c079",
+    "daily.csv": "58b7691336499c4e1f5674f62cec4d403fe5173428b090d238adfc433799cc13"
+  },
+  "forecast_display": "7603.30",
+  "information_cutoff_utc": "2026-11-13T12:00:00Z",
+  "target_utc": "2026-11-20T21:00:00Z",
+  "reference_definition": "Official S&P Dow Jones Indices S&P 500 price-index close",
+  "sources": {
+    "SP500_through_Nov11": "https://fred.stlouisfed.org/data/SP500",
+    "SP500_Nov12": "https://apnews.com/article/3f3668a937a11535103e3a5c8d82c9fc",
+    "DGS10": "https://fred.stlouisfed.org/data/DGS10",
+    "calendar": "https://www.nyse.com/trade/hours-calendars"
+  }
+}
