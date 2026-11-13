@@ -1,19 +1,30 @@
-# S&P 500 V3 forecast reconstruction
+# S&P 500 Forecast Evidence
 
-The model gives **7,603.30 index points** for the official 20 November 2026 close at 16:00 New York / 21:00 UTC.
+The V3 model produces **7,603.30 index points** for the official S&P Dow Jones Indices closing level on **20 November 2026 at 16:00 EST (21:00 UTC)**.
 
-The assignment information cutoff was 13 November at 12:00 UTC. The inputs were assembled and the model run at 2026-11-13T15:17:59.899976+00:00, after the cutoff. This is a reconstruction using observations dated before the cutoff. The archive does not establish a contemporaneous freeze or formal approval. Source links and input hashes are in the forecast record. Exact historical publication times were not independently verified for all rows.
+The coursework information cutoff was 13 November at 12:00 UTC. This forecast was reconstructed at 15:17:59 UTC using observations dated before the cutoff. Exact historical publication times were not independently verified for every observation.
 
-## Inputs and calculation
+## Reproduce the forecast offline
 
-The archived October FRED series were extended through 11 November for the equity index and 10 November for DGS10 from the FRED tables. The 12 November cash close of 7,592.40 was taken from AP and cross-checked against Yahoo Finance. The six subsequent equity sessions are 13, 16, 17, 18, 19 and 20 November. DGS10 on 10 November was 4.98%, versus 4.95% on 3 November. The factor was +0.03 percentage points. The raw level was 7,614.197104. Retaining half the movement from 7,592.40 yields 7,603.30.
-
-## Reproduction
-
-Extract the ZIP and run from its root with Python 3.9.6 (standard library only).
+Clone the repository or download and extract it using GitHub's **Code → Download ZIP** option. Run these commands from the repository root with Python 3.9.6. The model uses only the standard library.
 
 ```sh
+cd IFTE0007_SP500_20261113
 python3 model/forecast.py --origin 2026-11-12 --target 2026-11-20 --output results/reproduction.json
 ```
 
-Check the forecast and input hashes against final_forecast_record.json. The rerun timestamp will reflect the actual execution time. The original calculation output is in agent/calculation_run.txt. No network, account or AI subscription is required.
+The output should show a forecast of **7603.30**. Compare the input hashes and forecast with the saved record. The rerun reports its own execution time.
+
+## Model and inputs
+
+V3 fits a single-factor ridge regression to 252 matured daily observations. The factor is the change in the US ten-year Treasury yield across five valid observation intervals. The model forecasts a six-session log return and retains half the implied change in the index level.
+
+The baseline is the 12 November close of **7,592.40**. DGS10 rose from **4.95%** on 3 November to **4.98%** on 10 November. The fitted raw level is **7,614.197104**. Retaining half the change from the baseline gives **7,603.30** after rounding.
+
+## Files and evidence
+
+- [Python model](IFTE0007_SP500_20261113/model/forecast.py)
+- [Saved input data](IFTE0007_SP500_20261113/data)
+- [Forecast record, sources and input hashes](IFTE0007_SP500_20261113/final_forecast_record.json)
+- [Agent instructions and calculation transcript](IFTE0007_SP500_20261113/agent)
+- [Saved calculation output](IFTE0007_SP500_20261113/results/reproduction.json)
